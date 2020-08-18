@@ -91,7 +91,7 @@ def f1():
   #t=(6*60*60)
   job = updater.job_queue
   t=10
-  job_minute = job.run_repeating(check_for_updates, interval=t, first=0)
+  
   #запускаем в фоне функцию работающую отдельно от бота, задежка запуска 0 секунд
   job.run_once(watch_files, 0)
   #добавляем обработчик текстовых сообщений
