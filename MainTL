@@ -1,0 +1,108 @@
+from telegram.ext import Updater, CommandHandler, MessageHandler, Filters
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup
+from telegram.ext import CallbackQueryHandler
+import logging
+import _thread, time
+
+
+
+
+TOKEN = '1332430756:AAG7CLN2G6-LKOj8NWZX92EHNvAeApgkDOM'
+
+updater = Updater(token='1332430756:AAG7CLN2G6-LKOj8NWZX92EHNvAeApgkDOM', use_context=True)
+
+def start(bot, update):
+
+    bot.send_message(chat_id=update.message.chat_id, text = '*Привет!*', parse_mode='Markdown')
+  
+    keyboard = [[InlineKeyboardButton("Я бизнес", callback_data='Акула'),
+        InlineKeyboardButton("Я юморист", callback_data='Саша')],
+        [InlineKeyboardButton("Я тут бог", callback_data='Паша')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    update.message.reply_text('Please choose:', reply_markup=reply_markup)
+
+  
+
+
+
+def build_menu(buttons,
+               n_cols,
+               header_buttons=None,
+               footer_buttons=None):
+    menu = [buttons[i:i + n_cols] for i in range(0, len(buttons), n_cols)]
+    if header_buttons:
+        menu.insert(0, [header_buttons])
+    if footer_buttons:
+        menu.append([footer_buttons])
+    return menu
+
+def echo(bot, update):
+  """вызывается любым текстом от собеседника, но не командой файлом итп
+  отвечает эхом
+  """
+  t=update.message.text
+  bot.send_message(chat_id=update.message.chat_id, text = t)
+  
+
+def caps(bot, update, args):
+  """команда с аргументами /caps привед медвед
+  """
+  text_caps = ' '.join(args).upper()
+  bot.send_message(chat_id=update.message.chat_id, text=text_caps)
+  
+
+def button(bot, update):
+  """Обработчик нажатий на кнопки, для всех кнопок один обработчик
+  который получает имя кнопки на которую было нажатие (query.data)
+  """
+  query = update.callback_query
+  
+  bot.edit_message_text(text="Selected option: {}".format(query.data),
+              chat_id=query.message.chat_id,
+              message_id=query.message.message_id)
+
+
+def watch_files_thread(bot, job):
+  """Бесконечный цикл в котором можно делать всё что угодно
+  """
+  while True:
+    time.sleep(10)
+    bot.send_message(chat_id=USERID, text='123')
+  
+  
+def watch_files(bot, job):
+  """Запускается ботом 1 раз и тут же запускает в фоне функцию которая будет работать отдельно от бота
+  в этой функции можно прописать любое расписание и любые действия никак не связанные с событиями в боте
+  """
+  _thread.start_new_thread(watch_files_thread, (bot, job))
+
+
+def f1():
+  #создаем бота и обработчик команд
+  updater = Updater(token = TOKEN)
+  dispatcher = updater.dispatcher
+  #обработчик команды start
+  start_handler = CommandHandler('start', start)
+  dispatcher.add_handler(start_handler)
+  #обработчик команды с параметрами
+  caps_handler = CommandHandler('caps', caps, pass_args=True)
+  dispatcher.add_handler(caps_handler)
+  #добавляем регулярное задание, интервал в секундах, начать немедленно
+  #t=(6*60*60)
+  job = updater.job_queue
+  t=10
+  job_minute = job.run_repeating(check_for_updates, interval=t, first=0)
+  #запускаем в фоне функцию работающую отдельно от бота, задежка запуска 0 секунд
+  job.run_once(watch_files, 0)
+  #добавляем обработчик текстовых сообщений
+  echo_handler = MessageHandler(Filters.text, echo)
+  dispatcher.add_handler(echo_handler)
+  #обработчик кнопок
+  dispatcher.add_handler(CallbackQueryHandler(button))
+  #запускаем главный цикл
+  updater.start_polling()
+
+
+if __name__ == '__main__':
+  f1()
+
